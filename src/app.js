@@ -1,33 +1,73 @@
 const express = require("express");
 const cors = require("cors");
 
-// const { v4: uuid } = require('uuid');
+const { uuid, isUuid } = require('uuidv4');
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
 
+function validadeProjectId(request, response, next) {
+  const { id } = request.params;
+  if (!isUuid(id)) {
+    return response.status(400).json({ error: 'Invalid project ID.' });
+  }
+  return next();
+}
+
+function foundProjectId(request, response, next) {
+  const { id } = request.params;
+  const index = repositories.findIndex(project => (project.id === id));
+  if (index < 0) {
+    return response.status(400).json({ error: 'Project not found.' });
+  }
+  return next();
+}
+
+app.use('/repositories/:id', validadeProjectId, foundProjectId);
+
 const repositories = [];
 
 app.get("/repositories", (request, response) => {
-  // TODO
+  return response.json(repositories);
 });
 
 app.post("/repositories", (request, response) => {
-  // TODO
+  const { title, url, techs } = request.body;
+  const project = {
+    id: uuid(),
+    title,
+    url,
+    techs,
+    likes: 0,
+  };
+  repositories.push(project);
+  return response.json(project);
 });
 
 app.put("/repositories/:id", (request, response) => {
-  // TODO
+  const { id } = request.params;
+  const project = repositories.find(project => (project.id === id));
+  const { title, url, techs } = request.body;
+  project.title = title;
+  project.url = url;
+  project.techs = techs;
+  return response.json(project);
 });
 
 app.delete("/repositories/:id", (request, response) => {
-  // TODO
+  const { id } = request.params;
+  const index = repositories.findIndex(project => (project.id === id));
+  repositories.splice(index, 1);
+  return response.status(204).send();
 });
 
 app.post("/repositories/:id/like", (request, response) => {
-  // TODO
+  const { id } = request.params;
+  const project = repositories.find(project => (project.id === id));
+  project.likes++;
+  return response.json(project);
 });
 
 module.exports = app;
